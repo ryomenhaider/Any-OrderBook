@@ -106,7 +106,7 @@ class OrderBookTUI:
             plt.xticks([])
             plt.yticks([])
 
-        plt.plotsize(80, 20)
+        plt.plotsize(80, 12)
         return plt.build()
 
     def render(self):
@@ -121,17 +121,18 @@ class OrderBookTUI:
         console.print()
 
         orderbook_table = self.create_orderbook_table()
+        features_panel = self.create_features_panel()
         kline_chart = self.render_kline_chart()
 
-        features_panel = self.create_features_panel()
-
-        console.print(Panel("[bold]Order Book[/bold]", style="on black"))
+        console.print(Panel("[bold]Order Book[/bold]", border_style="green"))
         console.print(orderbook_table)
         console.print()
-        console.print(Panel("[bold]Price Chart[/bold]", style="on black"))
-        sys.stdout.write(kline_chart + "\n")
+
+        console.print(Panel("[bold]Price Chart[/bold]", border_style="cyan"))
+        print(kline_chart)
+
         console.print()
-        console.print(Panel("[bold]Features[/bold]", style="on black"))
+        console.print(Panel("[bold]Features[/bold]", border_style="blue"))
         console.print(features_panel)
 
     def run(self):

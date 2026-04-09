@@ -105,7 +105,7 @@ class OrderBookTUI:
         """
         return Panel(content, title="Features", border_style="blue")
 
-    def render_kline_chart(self) -> Panel:
+    def render_kline_chart(self) -> str:
         import plotext as plt
 
         plt.clear_data()
@@ -119,10 +119,10 @@ class OrderBookTUI:
             plt.xticks([])
             plt.yticks([])
 
-        chart = plt.build()
-        return Panel(chart, title="Kline Chart", border_style="green", width=60)
+        plt.plotsize(80, 20)
+        return plt.build()
 
-    def render_depth_chart(self) -> Panel:
+    def render_depth_chart(self) -> str:
         import plotext as plt
 
         plt.clear_data()
@@ -137,10 +137,30 @@ class OrderBookTUI:
             plt.xticks([])
             plt.yticks([])
 
-        chart = plt.build()
-        return Panel(chart, title="Depth Chart", border_style="yellow", width=60)
+        plt.plotsize(80, 20)
+        return plt.build()
+
+    def render_depth_chart(self) -> str:
+        import plotext as plt
+
+        plt.clear_data()
+        plt.clf()
+
+        if self.bid_prices and self.ask_prices:
+            plt.plot(self.bid_depth, self.bid_prices, color="green", marker="dot")
+            plt.plot(self.ask_depth, self.ask_prices, color="red", marker="dot")
+            plt.title(f"Depth Chart - {self.symbol}")
+            plt.xlabel("Cumulative Quantity")
+            plt.ylabel("Price")
+            plt.xticks([])
+            plt.yticks([])
+
+        plt.theme("dark")
+        return plt.build()
 
     def render(self):
+        import sys
+
         console.clear()
 
         console.print(
@@ -155,15 +175,15 @@ class OrderBookTUI:
         kline_chart = self.render_kline_chart()
 
         features_panel = self.create_features_panel()
-        depth_chart_panel = self.render_depth_chart()
+        depth_chart = self.render_depth_chart()
 
         console.print(Panel("[bold]Order Book & Kline Chart[/bold]", style="on black"))
         console.print(orderbook_table)
-        console.print(kline_chart)
+        sys.stdout.write(kline_chart + "\n")
         console.print()
         console.print(Panel("[bold]Features & Depth Chart[/bold]", style="on black"))
         console.print(features_panel)
-        console.print(depth_chart_panel)
+        sys.stdout.write(depth_chart + "\n")
 
     def run(self):
         self.running = True

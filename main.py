@@ -3,11 +3,18 @@ from rich.table import Table
 from rich.panel import Panel
 import time
 import sys
-import io
 
 from orderbook_data import fetch_orderboook, clean_orderbook, feature_engineer
 
 console = Console()
+
+
+def get_input(prompt: str, default: str) -> str:
+    console.print(prompt, end="")
+    try:
+        return input().strip() or default
+    except EOFError:
+        return default
 
 
 class OrderBookTUI:
@@ -104,9 +111,22 @@ class OrderBookTUI:
 
 def main():
     console.print("[bold cyan]Welcome to AnyOrderBook TUI![/bold cyan]")
-    symbol = "BTCUSDT"
 
-    tui = OrderBookTUI(symbol=symbol)
+    console.print("\n[bold]Configure Order Book:[/bold]")
+    symbol = get_input("  Symbol (e.g., BTCUSDT, ETHUSDT): ", "BTCUSDT")
+    limit_input = get_input("  Limit (number of orders, default 20): ", "20")
+    limit = int(limit_input) if limit_input.isdigit() else 20
+    refresh_input = get_input("  Refresh rate in seconds (default 2): ", "2")
+    refresh_rate = (
+        float(refresh_input) if refresh_input.replace(".", "", 1).isdigit() else 2.0
+    )
+
+    console.print(
+        f"\n[green]Starting with {symbol} (limit: {limit}, refresh: {refresh_rate}s)[/green]\n"
+    )
+    console.print("[dim]Press Ctrl+C to exit[/dim]\n")
+
+    tui = OrderBookTUI(symbol=symbol, limit=limit, refresh_rate=refresh_rate)
     try:
         tui.run()
     except KeyboardInterrupt:

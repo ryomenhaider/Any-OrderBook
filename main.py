@@ -4,7 +4,13 @@ from rich.panel import Panel
 import time
 import sys
 
-from orderbook_data import fetch_orderboook, clean_orderbook, feature_engineer
+from orderbook_data import (
+    fetch_orderboook,
+    fetch_kline,
+    clean_orderbook,
+    feature_engineer,
+    depth_chart,
+)
 
 console = Console()
 
@@ -28,12 +34,30 @@ class OrderBookTUI:
         self.bids = []
         self.asks = []
         self.features = {}
+        self.price_history = []
+        self.price_times = []
+        self.bid_prices = []
+        self.bid_depth = []
+        self.ask_prices = []
+        self.ask_depth = []
 
     def fetch_data(self):
         try:
             symbol, data = fetch_orderboook(self.symbol, self.limit)
             self.bids, self.asks = clean_orderbook(data)
             self.features = feature_engineer(self.bids, self.asks)
+
+            symbol, kline_data, timestamps, closes, times = fetch_kline(self.symbol)
+            self.price_history = closes
+            self.price_times = times
+
+            bid_prices, bid_depth, ask_prices, ask_depth = depth_chart(
+                self.bids, self.asks
+            )
+            self.bid_prices = bid_prices
+            self.bid_depth = bid_depth
+            self.ask_prices = ask_prices
+            self.ask_depth = ask_depth
         except Exception as e:
             console.print(f"[red]Error fetching data: {e}[/red]")
 
@@ -81,6 +105,41 @@ class OrderBookTUI:
         """
         return Panel(content, title="Features", border_style="blue")
 
+    def render_kline_chart(self) -> Panel:
+        import plotext as plt
+
+        plt.clear_data()
+        plt.clf()
+
+        if self.price_history:
+            plt.plot(self.price_history, marker="dot", color="cyan")
+            plt.title(f"Price Chart - {self.symbol}")
+            plt.xlabel("Time")
+            plt.ylabel("Price")
+            plt.xticks([])
+            plt.yticks([])
+
+        chart = plt.build()
+        return Panel(chart, title="Kline Chart", border_style="green", width=60)
+
+    def render_depth_chart(self) -> Panel:
+        import plotext as plt
+
+        plt.clear_data()
+        plt.clf()
+
+        if self.bid_prices and self.ask_prices:
+            plt.plot(self.bid_depth, self.bid_prices, color="green", marker="dot")
+            plt.plot(self.ask_depth, self.ask_prices, color="red", marker="dot")
+            plt.title(f"Depth Chart - {self.symbol}")
+            plt.xlabel("Cumulative Quantity")
+            plt.ylabel("Price")
+            plt.xticks([])
+            plt.yticks([])
+
+        chart = plt.build()
+        return Panel(chart, title="Depth Chart", border_style="yellow", width=60)
+
     def render(self):
         console.clear()
 
@@ -93,10 +152,18 @@ class OrderBookTUI:
         console.print()
 
         orderbook_table = self.create_orderbook_table()
-        console.print(orderbook_table)
+        kline_chart = self.render_kline_chart()
 
         features_panel = self.create_features_panel()
+        depth_chart_panel = self.render_depth_chart()
+
+        console.print(Panel("[bold]Order Book & Kline Chart[/bold]", style="on black"))
+        console.print(orderbook_table)
+        console.print(kline_chart)
+        console.print()
+        console.print(Panel("[bold]Features & Depth Chart[/bold]", style="on black"))
         console.print(features_panel)
+        console.print(depth_chart_panel)
 
     def run(self):
         self.running = True

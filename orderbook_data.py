@@ -15,6 +15,51 @@ def fetch_orderboook(symbol: str, limit: int = 20):
         raise ConnectionError(f"the status code is {e}")
 
 
+def fetch_kline(symbol: str):
+
+    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1m&limit=60"
+    try:
+        res = requests.get(url)
+        if res.status_code == 200:
+            data = res.json()
+            timestamps = [candle[0] for candle in data]
+            closes = [float(candle[4]) for candle in data]
+            from datetime import datetime
+
+            times = [
+                datetime.fromtimestamp(ts / 1000).strftime("%H:%M") for ts in timestamps
+            ]
+
+            return symbol, data, timestamps, closes, times
+
+    except Exception as e:
+        raise ConnectionError(f"the status code is {e}")
+
+
+def depth_chart(bids, asks):
+    bids = sorted(bids, key=lambda x: x["price"], reverse=True)
+    asks = sorted(asks, key=lambda x: x["price"], reverse=False)
+
+    def cumulate(levels):
+        result = []
+        running = 0
+        for level in levels:
+            running += level["quantity"]
+            result.append({"price": level["price"], "cum_qty": running})
+        return result
+
+    cum_bids = cumulate(bids)
+    cum_asks = cumulate(asks)
+
+    bid_prices = [level["price"] for level in cum_bids]
+    bid_depth = [level["cum_qty"] for level in cum_bids]
+
+    ask_prices = [level["price"] for level in cum_asks]
+    ask_depth = [level["cum_qty"] for level in cum_asks]
+
+    return bid_prices, bid_depth, ask_prices, ask_depth
+
+
 def clean_orderbook(data):
 
     bids = [{"price": float(b[0]), "quantity": float(b[1])} for b in data["bids"]]

@@ -9,4 +9,6 @@ dependencies = [
     "requests>=2.33.1",
     "rich>=14.3.3",
     "plotext",
+    "drawille>=0.2.0",
+    "textual>=8.2.3",
 ]
